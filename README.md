@@ -6,7 +6,7 @@
 
 ---
 
-## The problem
+## Problem statement
 
 Deaf and hard-of-hearing people need captions for everyday conversations, not just videos.
 Existing live-caption tools for Hebrew either depend on the cloud, which brings latency, privacy issues, and no offline use, or have weak Hebrew accuracy.
