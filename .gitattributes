@@ -1,0 +1,9 @@
+# Normalize line endings: LF in the repo and on checkout (scripts must run on Fedora and Termux)
+* text=auto eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.kt text eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary

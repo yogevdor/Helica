@@ -1,0 +1,54 @@
+# Pilot fine-tune of Nemotron 3.5 ASR Streaming 0.6B on 100–200 h of Hebrew — RTX 5060 Ti 16 GB.
+#
+# STATUS: planning values, NOT a runnable NeMo config yet.
+# Next step: take the config from NVIDIA's guide "How to Fine-Tune Nemotron 3.5 ASR for Your Language,
+# Domain, or Accent" for the installed NeMo version, then apply these overrides. Verify every key name
+# against that config — don't trust the names below blindly.
+
+base_model: nvidia/nemotron-3.5-asr-streaming-0.6b
+language: he-IL
+
+data:
+  train_manifest: ${oc.env:HELICA_DATA}/pilot/train_manifest.jsonl
+  val_manifest: ${oc.env:HELICA_DATA}/pilot/val_manifest.jsonl   # held-out slice of training data, NOT eval sets
+  sample_rate: 16000
+  max_duration: 20.0        # seconds; lower to 15 if OOM
+  min_duration: 0.5
+  bucketing: true           # bucket by duration to cut padding waste
+  english_fraction: 0.15    # 10–20 % English + code-switched
+
+# VRAM estimate (full fine-tune, AdamW, bf16-mixed):
+#   fp32 weights 2.4 GB + fp32 grads 2.4 GB + Adam m/v 4.8 GB  ≈ 9.6 GB  (16 bytes × 0.6B params)
+#   CUDA context / allocator                                     ≈ 1 GB
+#   left for activations + RNNT joint (B × T × U × vocab)        ≈ 5 GB  ← the joint is what usually OOMs
+# So: fused joint/loss is close to mandatory; activation checkpointing likely; if still tight,
+# 8-bit AdamW (bitsandbytes, saves ~3.6 GB) or freeze the lower encoder layers.
+# Before the real run: a 200-step smoke run → record peak memory (torch.cuda.max_memory_allocated)
+# and steps/s, and estimate wall-clock for max_steps.
+memory_16gb:
+  precision: bf16-mixed
+  batch_size: 4             # start here, raise while VRAM allows
+  accumulate_grad_batches: 8
+  fused_joint_loss: true    # NeMo: model.joint.fuse_loss_wer + fused_batch_size — verify key names
+  gradient_checkpointing: maybe   # likely needed; measure in the smoke run
+  optimizer_8bit: maybe     # only if still OOM; check NeMo/Lightning support in the installed version
+  num_workers: 6            # Ryzen 5 7500F has 6 physical cores
+
+optim:
+  lr: 1.0e-4                # fine-tuning: well below pre-training LR; sweep 5e-5 … 2e-4
+  warmup_steps: 1000
+  scheduler: cosine
+  max_steps: 20000          # adjust to data size; check val CER every ~1000 steps
+
+streaming:
+  train_in_streaming_mode: true   # match the cache-aware chunked attention used on the phone
+  # Keep the base model's FULL list of att_context_size values (multi-lookahead training).
+  # Training at one chunk size only would degrade the others.
+  keep_base_att_context_sizes: true
+  eval_chunks_ms: [160, 320, 560, 1120]
+  select_checkpoint_by: streaming WER @ 1120 ms on val_manifest (episode-disjoint)
+
+after_training:
+  - run hallucination suite (must output nothing)
+  - CER/WER on all test sets at 560 and 1120 ms
+  - export GGUF q8_0 → parity check → phone check

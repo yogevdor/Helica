@@ -1,0 +1,32 @@
+[project]
+name = "helica"
+version = "0.1.0"
+description = "Hebrew live captioning on-device: training, evaluation and export tools"
+requires-python = ">=3.11"
+authors = [{ name = "Dor Yogev" }]
+dependencies = [
+    "jiwer>=3.0",
+    "pyyaml>=6.0",
+    "soundfile>=0.12",
+    "numpy",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+# torch / torchaudio come from the cu128 index (see docs/GETTING_STARTED.md), NeMo is installed separately.
+data = ["datasets>=2.19", "librosa>=0.10", "duckdb"]
+dev = ["ruff", "pytest", "datasets>=2.19", "librosa>=0.10", "duckdb"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["eval*", "training*", "export*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

@@ -1,0 +1,55 @@
+# --- data, audio, models: never commit ---
+data/
+runs/
+checkpoints/
+models/
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.ogg
+*.nemo
+*.gguf
+*.bin
+*.pt
+*.ckpt
+*.safetensors
+*.onnx
+*.tflite
+
+# keep small reference transcripts for own clips
+!eval/own_clips/*.txt
+
+# --- python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# --- tools ---
+.ipynb_checkpoints/
+wandb/
+lightning_logs/
+nemo_experiments/
+.idea/
+.vscode/
+*.log
+
+# --- android ---
+android/**/build/
+android/.gradle/
+android/local.properties
+*.apk
+*.aab
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Claude Code local settings ---
+.claude/settings.local.json

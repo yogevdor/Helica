@@ -1,0 +1,67 @@
+# Test sets. NEVER used for training: build_manifests.py reads `exclude_sources` from here.
+# Hugging Face IDs marked TODO must be confirmed against the ivrit.ai leaderboard's evaluation code:
+# the leaderboard scores WER with jiwer via `evaluate_model.py` in github.com/ivrit-ai/asr-training
+# (its normalization is the one to copy into helica_eval/normalize.py).
+# Sizes below are from the leaderboard's About page (Oct 2026).
+
+leaderboard:
+  - name: eval-d1
+    hf_id: ivrit-ai/eval-d1          # gated, ivrit.ai License
+    zero_shot_nemotron: 0.171        # WER
+    notes: >
+      ONE podcast episode, ~2 h, so few speakers. It comes from the ivrit.ai corpus, so exclude the whole
+      podcast series (same hosts) from training, not just the episode. Closest to the training data, so
+      the most likely set to improve. Don't judge Gate B on it alone.
+  - name: eval-whatsapp
+    hf_id: ivrit-ai/eval-whatsapp
+    zero_shot_nemotron: 0.365
+    notes: ~1:10 h of volunteer WhatsApp recordings. Phone mics, closest leaderboard set to the real use case.
+  - name: saspeech
+    hf_id: TODO   # confirm from leaderboard code
+    zero_shot_nemotron: 0.242
+    notes: ~4 h, manually corrected portion
+  - name: fleurs-he
+    hf_id: google/fleurs
+    config: he_il
+    split: test
+    zero_shot_nemotron: 0.460
+    notes: ~2 h, read speech
+  - name: common-voice-he
+    hf_id: mozilla-foundation/common_voice_17_0   # check it's still downloadable from HF
+    config: he
+    split: TODO   # leaderboard says "validated set", ~2 h; confirm the exact split in evaluate_model.py
+    zero_shot_nemotron: TODO   # read from the leaderboard's benchmark.csv
+  - name: kan
+    hf_id: imvladikon/hebrew_speech_kan   # per leaderboard About page; confirm in evaluate_model.py
+    split: validation
+    zero_shot_nemotron: 0.542
+    notes: ~1.7 h, broadcast
+
+own_clips:
+  # audio under $HELICA_DATA/own_clips/, reference text in eval/own_clips/<name>.txt
+  - clip7s.wav          # clean
+  - noisy_mild.wav
+  - noisy_hard.wav
+  - 2.5m.wav            # distant speech — reference text still TODO
+  - code_switching.wav  # TODO: confirm file name
+
+real_world:
+  # TODO (Phase 1): 30–60 min of realistic conversations (1–3 m, several speakers, phone on a table,
+  # background noise), recorded with everyone's consent, hand-transcribed. Part of Gate B.
+  # Audio under $HELICA_DATA/real_world/, reference manifests outside the repo.
+
+hallucination:          # must output NOTHING, not even punctuation (see eval/helica_eval/hallucination.py)
+  - silence_digital.wav
+  - silence10s.wav
+  - noise_pink.wav
+  - tvnoise10s.wav
+  # TODO (Phase 1): grow to 30–60 min: music (incl. lyrics in other languages), café babble, kitchen,
+  # street, wind, phone rubbing in a pocket, cough / laugh / breathing. Check each noise corpus's license.
+
+# Leakage guard for training manifests. List whole podcast series / speaker ids, not only episodes.
+exclude_sources:
+  - Mindset/2018.10.07   # the eval-d1 episode (uuid prefix in ivrit.ai crowd-transcribe; D-020)
+  # Series check (Nov 16, 2026): crowd-transcribe-v5 train has 0 Mindset clips (the whole series is in its
+  # test split), so series-level exclusion costs nothing there. Excluding "Mindset/" here would also remove
+  # 7.3 h of the 26.1 h validation set, so the list stays episode-level for now. Revisit when adding
+  # audio-v2 (may contain Mindset episodes in training data).
